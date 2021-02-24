@@ -1,14 +1,16 @@
 #include <LCDWIKI_GUI.h> //Core graphics library
 #include <LCDWIKI_KBV.h> //Hardware-specific library
-#include <math.h>
 
-#define BUFFER 432
-#define THRESHOLD 10
 #define ACQ_DATA A5
+#define BUFFER 432
 
-static int acq_data[BUFFER];
-int  acq_data_check;
+float Scaler = 1;
+int THRESHOLD =  10;
+
+int acq_data[BUFFER]={0};
+float  acq_data_check;
 float data_entry;
+float temp_value;
 int value;
 
 LCDWIKI_KBV my_lcd(320,480,A3,A2,A1,A0,A4);//height,width,cs,cd,wr,rd,reset
@@ -21,8 +23,8 @@ void setup()
   my_lcd.Init_LCD();
   my_lcd.Fill_Screen(0x0000);  
   my_lcd.Set_Rotation(1); 
-  draw_line_delay(0,(my_lcd.Get_Height()/2)*1.9,480,(my_lcd.Get_Height()/2)*1.9,0xFFFF,2); // x-axis
-  draw_line_delay((my_lcd.Get_Width()/2)*0.1 ,0,(my_lcd.Get_Width()/2)*0.1,320,0xFFFF,2); //y-axis
+  draw_line_delay(0,(my_lcd.Get_Height())*0.95,480,(my_lcd.Get_Height())*0.95,0xFFFF,2); // x-axis
+  draw_line_delay((my_lcd.Get_Width())*0.05 ,0,(my_lcd.Get_Width())*0.05,320,0xFFFF,2); //y-axis
 }
 
 void loop() 
@@ -150,17 +152,45 @@ void sin_wave()
 void analog_wave()
 {
  acq_data_check =  analogRead(ACQ_DATA);
-  if(acq_data_check >= THRESHOLD)
+  if(acq_data_check > THRESHOLD)
   {
-    Serial.println(acq_data[int(data_entry)]);
-    data_entry = acq_data_check*(480-48)/(1023-11);
-    value = int(data_entry);
-    acq_data[value]=acq_data[value]+1;
-    update_screen(48+value,304-acq_data[value]);
+    data_entry = ((acq_data_check-10)*(480-24))/(1023-10);
+    
+    //Serial.println(value);
+    if(data_entry < BUFFER && data_entry>=0)
+    {
+      value = int(data_entry);
+      if(acq_data[value] < 304)
+      {
+        
+        acq_data[value]=int(acq_data[value]+1);
+        //Serial.println(acq_data[value]);
+        update_screen(25+value,304-acq_data[value],0xFFF);
+      }
+      else
+      {
+        Scaler = Scaler+1;
+        acq_data[value]=int(acq_data[value]+1);
+        my_lcd.Set_Draw_color(0x0000);
+        for(int num=0; num<BUFFER; num++)
+        {
+          temp_value = acq_data[num]*0.5;
+          
+          acq_data[num]= int(temp_value);
+          //Serial.println(temp_value);
+          for(int i=0;i<304-acq_data[num];i++)
+          {
+          my_lcd.Set_Draw_color(0x0000);
+          my_lcd.Draw_Pixel(25+num,i);
+          }
+        }
+      }
+    }
   }
 }
 
-void update_screen(int row, int column)
+void update_screen(int row, int column, uint16_t color)
 {
+  my_lcd.Set_Draw_color(color);
    my_lcd.Draw_Pixel(row,column);
 }
