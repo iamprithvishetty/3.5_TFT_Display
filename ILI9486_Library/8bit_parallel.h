@@ -7,8 +7,6 @@
 #define CONTROL_MASK CS_MASK|CD_MASK|WR_MASK|RD_MASK|RES_MASK
 #define SET_CNTL_BITS write_word(GPIO_DIRECTION_CNTRL_REG, *GPIO_DIRECTION_CNTRL_REG | CONTROL_MASK)
 
-
-
 #define CS_ACTIVE write_word(GPIO_DATA_REG, *GPIO_DATA_REG & ~CS_MASK)
 #define CS_IDLE write_word(GPIO_DATA_REG, *GPIO_DATA_REG | CS_MASK)
 #define CD_COMMAND write_word(GPIO_DATA_REG, *GPIO_DATA_REG & ~CD_MASK)
@@ -18,6 +16,7 @@
 #define RD_ACTIVE write_word(GPIO_DATA_REG, *GPIO_DATA_REG & ~RD_MASK)
 #define RD_IDLE write_word(GPIO_DATA_REG, *GPIO_DATA_REG | RD_MASK)
 #define RES_ACTIVE write_word(GPIO_DATA_REG, *GPIO_DATA_REG | RES_MASK)
+#define RES_IDLE write_word(GPIO_DATA_REG, *GPIO_DATA_REG & ~RES_MASK)
 #define WR_STROBE {WR_ACTIVE; WR_IDLE;}
 #define RD_STROBE {RD_ACTIVE; RD_IDLE;}
 
@@ -25,8 +24,8 @@
 
 #define DATA_MASK 0x000000FF
 
-#define write8(d) {write_word(GPIO_DATA_REG,*GPIO_DATA_REG | d); WR_STROBE; }
-#define read8(dst) {RD_IDLE;DELAY;dst=read_word(GPIO_DATA_REG);RD_ACTIVE;}
+#define write8(d) {write_word(GPIO_DATA_REG,*GPIO_DATA_REG | (d & DATA_MASK)); WR_STROBE; }
+#define read8(dst) {RD_ACTIVE;DELAY;dst=(read_word(GPIO_DATA_REG)&DATA_MASK);RD_IDLE;}
 
 #define write16(d) { uint8_t h = (d)>>8, l = d; write8(h); write8(l); }
 #define read16(dst) { uint8_t hi; read8(hi); read8(dst); dst |= (hi << 8); }
@@ -35,8 +34,8 @@
 #define writeCmd16(x){ CD_COMMAND; write16(x); CD_DATA; }
 #define writeData16(x){ write16(x) }
 
-#define setWriteDir() { write_word(GPIO_DIRECTION_CNTRL_REG,*GPIO_DIRECTION_CNTRL_REG|0x000000FF);}
-#define setReadDir()  { write_word(GPIO_DIRECTION_CNTRL_REG,*GPIO_DIRECTION_CNTRL_REG & ~DATA_MASK); }
+#define setWriteDir() write_word(GPIO_DIRECTION_CNTRL_REG,*GPIO_DIRECTION_CNTRL_REG|DATA_MASK)
+#define setReadDir() write_word(GPIO_DIRECTION_CNTRL_REG,*GPIO_DIRECTION_CNTRL_REG & ~DATA_MASK)
 
 // Set value of TFT register: 8-bit address, 8-bit value
 #define writeCmdData8(a, d) { CD_COMMAND; write8(a); CD_DATA; write8(d); }
