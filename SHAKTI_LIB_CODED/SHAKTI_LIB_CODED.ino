@@ -13,33 +13,37 @@ bool flag_curve=false;
 bool flag_warn=false;
 int time_now = millis();
 
+boolean Screen1 = false;
+boolean Screen2 = false;
+
 LCD_SHAKTI my_lcd(0x9486,480,320);
 
 void setup() {
   my_lcd.Init_LCD();
   my_lcd.Set_Rotation(1);
   my_lcd.Fill_Screen(0, 0, 0);
-  
+  Make_Axis(45,35,1024,100);
 }
 
 void loop() {
-  
-if(millis()-time_now>50)
-{
-  time_now = millis();
-  if(cps>=60)
+ if(Screen1)
+ {
+  if(millis()-time_now>50)
   {
-    cps=0;
+    time_now = millis();
+    if(cps>=60)
+    {
+      cps=0;
+    }
+    else
+    {
+      cps=cps+1;
+    }
   }
-  else
-  {
-    cps=cps+1;
-  }
-}
-Bar_Create_Update(15, 50, 65, 305, MAX_VALUE);
-Curve_Create_Update(280,300,MAX_VALUE,150);
-Warning_Text(180,60,MAX_VALUE);
-
+  Bar_Create_Update(15, 50, 65, 305, MAX_VALUE);
+  Curve_Create_Update(280,300,MAX_VALUE,150);
+  Warning_Text(180,60,MAX_VALUE);
+ }
 }
 
 void Bar_Create_Update(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2,uint8_t max_val)
@@ -108,21 +112,23 @@ void Bar_Create_Update(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2,uint8_t m
     my_lcd.Set_Text_Mode(0);
     my_lcd.Set_Text_Back_colour(0,0,0);
     my_lcd.Print_Number_Int(long(cps_now), x1+9, y1-30, 3,' ', 10);
-    //my_lcd.Print_String(var, x1+9, y1-30);
 
  }
   
 }
 
-void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnitude)
+
+// CURVE FUNCTION
+void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnitude) //x1,y1--> Center, magnitude --> radius of curvature
 {
   uint16_t angle;
   int32_t x_val=0,y_val=0;
   uint8_t magnitude_change;
-  uint8_t width = 7;
-  if(flag_curve == false)
+  uint8_t width = 7; // Width of Curvature
+  
+  if(flag_curve == false) // Only runs once to initialize
   {
-  //For making the Centre WHITE Point  
+  //For making the Centre WHITE Point of radius 4  
   my_lcd.Set_Draw_color(255, 255, 255);
   for(angle =180; angle>0; angle--)
   {
@@ -130,7 +136,7 @@ void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnit
   {
     x_val = float(magnitude_change)*cos((angle*PI)/180);
     y_val = float(magnitude_change)*sin((angle*PI)/180);
-    my_lcd.Draw_Pixel(x1+x_val,y1-y_val);
+    my_lcd.Draw_Pixel(x1+x_val,y1-y_val); // w.r.t the Screen the coordinates are shifted i.e why x1+x_val, y1-y_val
   }
   
   }
@@ -296,3 +302,52 @@ void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnit
   }
   }
  }
+
+void Make_Axis(uint16_t x, uint16_t y, uint16_t max_limit_x, uint16_t max_limit_y)
+{
+  
+  my_lcd.Set_Draw_color(0xFFFF);
+  
+  //X-axis (Start x coordinate, Start y coordinate, Height)
+  my_lcd.Draw_Fast_HLine(0, my_lcd.Get_Height()-y, my_lcd.Get_Width());
+  
+  //Y-axis (Start x coordinate, Start y coordinate, Width)
+  my_lcd.Draw_Fast_VLine(x, 0, my_lcd.Get_Height());
+
+  my_lcd.Set_Text_colour(0x0FFF);
+  my_lcd.Set_Text_Size(1);
+  my_lcd.Set_Text_Mode(1);
+
+  //X-Axis Point
+  for(uint8_t count_x=1; count_x<= 10; count_x++)
+    {
+    for(uint8_t count_y=0;count_y<8;count_y++)
+      {
+      my_lcd.Draw_Pixel( x+(my_lcd.Get_Width()-x)*count_x*0.1, my_lcd.Get_Height()-y+count_y);
+      }  
+      my_lcd.Print_Number_Int(long(max_limit_x*count_x*0.1), x+(my_lcd.Get_Width()-x)*count_x*0.1-15, (my_lcd.Get_Height()-y)+15, 3,' ', 10);
+    
+    }
+  
+  // Y-Axis Points
+  my_lcd.Print_Number_Int(long(0), x-15, (my_lcd.Get_Height()-y)+5, 3,' ', 10); // To Draw 0
+  
+  for(uint8_t count_y=1; count_y<= 10; count_y++)
+  {
+  for(uint8_t count_x=0;count_x<8;count_x++)
+    {
+    my_lcd.Draw_Pixel( x-count_x, (my_lcd.Get_Height()-y)-(my_lcd.Get_Height()-y)*0.1*count_y);
+    }  
+    my_lcd.Print_Number_Int(long(max_limit_y*count_y*0.1), x-25, (my_lcd.Get_Height()-y)-(my_lcd.Get_Height()-y)*0.1*count_y, 3,' ', 10);
+  
+  }
+  
+}
+
+
+
+void update_screen(int row, int column, uint16_t color)
+{
+  my_lcd.Set_Draw_color(color);
+   my_lcd.Draw_Pixel(row,column);
+}
