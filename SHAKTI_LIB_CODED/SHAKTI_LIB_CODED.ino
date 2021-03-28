@@ -24,7 +24,7 @@ void setup() {
 
 void loop() {
   
-if(millis()-time_now>1000)
+if(millis()-time_now>50)
 {
   time_now = millis();
   if(cps>=60)
@@ -236,7 +236,7 @@ void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnit
   static uint8_t flag_check=0;
   if(flag_warn == false)
   {
-    if(cps_now<threshold1 && (flag_check==1 || flag_check==2))
+    if(cps_now<threshold1)
   {
   my_lcd.Set_Text_colour(0x0FFF);
   my_lcd.Set_Text_Back_colour(0x0000);
@@ -244,7 +244,7 @@ void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnit
   my_lcd.Print_String(text_safe,x,y);
   flag_check = 0;
   }
-  else if(cps_now<threshold2 && cps_now>threshold1 && (flag_check==0 || flag_check==2))
+  else if(cps_now<threshold2)
   {
   my_lcd.Set_Text_colour(0x0FFF);
   my_lcd.Set_Text_Back_colour(0x0000);
@@ -253,7 +253,7 @@ void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnit
   flag_check = 1;
   }
 
-  else if(cps_now>threshold2 && (flag_check==0 || flag_check==1))
+  else if(cps_now>threshold2)
   {
   my_lcd.Set_Text_colour(0x0FFF);
   my_lcd.Set_Text_Back_colour(0x0000);
