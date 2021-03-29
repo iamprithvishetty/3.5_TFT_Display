@@ -2,6 +2,8 @@
 #include <math.h> //Math Library
 
 #define MAX_VALUE 60
+#define BUFFER 1024
+
 #define PI 3.141592653589793238
 
 uint8_t cps=10;
@@ -13,8 +15,12 @@ bool flag_curve=false;
 bool flag_warn=false;
 int time_now = millis();
 
-boolean Screen1 = false;
+boolean Screen1 = true;
 boolean Screen2 = false;
+
+static volatile uint16_t record_data[BUFFER]={0};
+static volatile uint16_t record_data_compressed[435]={0};
+static boolean flag_start=0;
 
 LCD_SHAKTI my_lcd(0x9486,480,320);
 
@@ -22,7 +28,13 @@ void setup() {
   my_lcd.Init_LCD();
   my_lcd.Set_Rotation(1);
   my_lcd.Fill_Screen(0, 0, 0);
-  Make_Axis(45,35,1024,100);
+  for(int count=0;count<10000;count++)
+  {
+    Record_Data(random(0,1024));
+  }
+  Make_Axis(45,35,1024,500);
+  Draw_Spectrum_Full(45,35);
+  
 }
 
 void loop() {
@@ -43,6 +55,10 @@ void loop() {
   Bar_Create_Update(15, 50, 65, 305, MAX_VALUE);
   Curve_Create_Update(280,300,MAX_VALUE,150);
   Warning_Text(180,60,MAX_VALUE);
+ }
+ if(Screen2)
+ {
+  Record_Data(random(0,1024));
  }
 }
 
@@ -325,7 +341,7 @@ void Make_Axis(uint16_t x, uint16_t y, uint16_t max_limit_x, uint16_t max_limit_
       {
       my_lcd.Draw_Pixel( x+(my_lcd.Get_Width()-x)*count_x*0.1, my_lcd.Get_Height()-y+count_y);
       }  
-      my_lcd.Print_Number_Int(long(max_limit_x*count_x*0.1), x+(my_lcd.Get_Width()-x)*count_x*0.1-15, (my_lcd.Get_Height()-y)+15, 3,' ', 10);
+      my_lcd.Print_Number_Int(long(max_limit_x*count_x*0.1), x+(my_lcd.Get_Width()-x)*count_x*0.1-25, (my_lcd.Get_Height()-y)+15, 3,' ', 10);
     
     }
   
@@ -344,7 +360,47 @@ void Make_Axis(uint16_t x, uint16_t y, uint16_t max_limit_x, uint16_t max_limit_
   
 }
 
+void Draw_Spectrum_Full(uint16_t x, uint16_t y)
+{
 
+if(flag_start != 1)
+{
+
+for(int count=0; count<BUFFER; count++)
+{
+  record_data_compressed[int((count*(my_lcd.Get_Width()-x))/BUFFER)] = record_data_compressed[int((count*(my_lcd.Get_Width()-x))/BUFFER)] + record_data[count];
+}
+my_lcd.Set_Draw_color(0x0FFF);
+for(int count=0; count< my_lcd.Get_Width()-x; count++)
+{
+  my_lcd.Draw_Fast_VLine(x+count+1,my_lcd.Get_Height()-y-record_data_compressed[count],record_data_compressed[count]);
+}
+
+flag_start = 1;
+
+}
+
+}
+
+void Update_Spectrum_Full(uint16_t x, uint16_t y, uint16_t adc_value)
+{
+  adc_value = int((adc_value*(my_lcd.Get_Width()-x))/BUFFER);
+  record_data_compressed[adc_value] = record_data_compressed[adc_value] + 1;
+  my_lcd.Set_Draw_color(0x0FFF);
+  my_lcd.Draw_Fast_VLine(x+adc_value+1,my_lcd.Get_Height()-y-record_data_compressed[adc_value],record_data_compressed[adc_value]); // Blue Line
+  my_lcd.Set_Draw_color(0x0000);
+  my_lcd.Draw_Fast_VLine(x+adc_value+1,0,my_lcd.Get_Height()-y-record_data_compressed[adc_value]); // Black Line
+
+}
+
+void Record_Data(uint16_t adc_value)
+{
+  record_data[adc_value] = record_data[adc_value]+1;
+  if(flag_start == 1 && Screen2)
+  {
+    Update_Spectrum_Full(45,35,adc_value);
+  }
+}
 
 void update_screen(int row, int column, uint16_t color)
 {
