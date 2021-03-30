@@ -15,9 +15,11 @@ bool flag_curve=false;
 bool flag_warn=false;
 int time_now = millis();
 
-boolean Screen1 = true;
-boolean Screen2 = false;
+boolean Screen1 = false;
+boolean Screen2 = true;
 
+static uint16_t x_origin;
+static uint16_t y_origin;
 static volatile uint16_t record_data[BUFFER]={0};
 static volatile uint16_t record_data_compressed[435]={0};
 static boolean flag_start=0;
@@ -28,12 +30,11 @@ void setup() {
   my_lcd.Init_LCD();
   my_lcd.Set_Rotation(1);
   my_lcd.Fill_Screen(0, 0, 0);
+  Set_Origin(45,30);
   for(int count=0;count<10000;count++)
   {
     Record_Data(random(0,1024));
   }
-  Make_Axis(45,35,1024,500);
-  Draw_Spectrum_Full(45,35);
   
 }
 
@@ -58,6 +59,11 @@ void loop() {
  }
  if(Screen2)
  {
+  if(flag_start == 0)
+  {
+     Make_Axis(1024,500);
+     Draw_Spectrum_Full();
+  }
   Record_Data(random(0,1024));
  }
 }
@@ -319,16 +325,22 @@ void Curve_Create_Update(uint16_t x1,uint16_t y1,uint8_t max_val, uint8_t magnit
   }
  }
 
-void Make_Axis(uint16_t x, uint16_t y, uint16_t max_limit_x, uint16_t max_limit_y)
+void Set_Origin(uint16_t x,  uint16_t y)
 {
-  
+  x_origin = x;
+  y_origin = y;
+}
+
+void Make_Axis(uint16_t max_limit_x, uint16_t max_limit_y)
+{
+
   my_lcd.Set_Draw_color(0xFFFF);
   
   //X-axis (Start x coordinate, Start y coordinate, Height)
-  my_lcd.Draw_Fast_HLine(0, my_lcd.Get_Height()-y, my_lcd.Get_Width());
+  my_lcd.Draw_Fast_HLine(0, my_lcd.Get_Height()-y_origin, my_lcd.Get_Width());
   
   //Y-axis (Start x coordinate, Start y coordinate, Width)
-  my_lcd.Draw_Fast_VLine(x, 0, my_lcd.Get_Height());
+  my_lcd.Draw_Fast_VLine(x_origin, 0, my_lcd.Get_Height());
 
   my_lcd.Set_Text_colour(0x0FFF);
   my_lcd.Set_Text_Size(1);
@@ -339,28 +351,28 @@ void Make_Axis(uint16_t x, uint16_t y, uint16_t max_limit_x, uint16_t max_limit_
     {
     for(uint8_t count_y=0;count_y<8;count_y++)
       {
-      my_lcd.Draw_Pixel( x+(my_lcd.Get_Width()-x)*count_x*0.1, my_lcd.Get_Height()-y+count_y);
+      my_lcd.Draw_Pixel( x_origin+(my_lcd.Get_Width()-x_origin)*count_x*0.1, my_lcd.Get_Height()-y_origin+count_y);
       }  
-      my_lcd.Print_Number_Int(long(max_limit_x*count_x*0.1), x+(my_lcd.Get_Width()-x)*count_x*0.1-25, (my_lcd.Get_Height()-y)+15, 3,' ', 10);
+      my_lcd.Print_Number_Int(long(max_limit_x*count_x*0.1), x_origin+(my_lcd.Get_Width()-x_origin)*count_x*0.1-25, (my_lcd.Get_Height()-y_origin)+15, 3,' ', 10);
     
     }
   
   // Y-Axis Points
-  my_lcd.Print_Number_Int(long(0), x-15, (my_lcd.Get_Height()-y)+5, 3,' ', 10); // To Draw 0
+  my_lcd.Print_Number_Int(long(0), x_origin-15, (my_lcd.Get_Height()-y_origin)+5, 3,' ', 10); // To Draw 0
   
   for(uint8_t count_y=1; count_y<= 10; count_y++)
   {
   for(uint8_t count_x=0;count_x<8;count_x++)
     {
-    my_lcd.Draw_Pixel( x-count_x, (my_lcd.Get_Height()-y)-(my_lcd.Get_Height()-y)*0.1*count_y);
+    my_lcd.Draw_Pixel( x_origin-count_x, (my_lcd.Get_Height()-y_origin)-(my_lcd.Get_Height()-y_origin)*0.1*count_y);
     }  
-    my_lcd.Print_Number_Int(long(max_limit_y*count_y*0.1), x-25, (my_lcd.Get_Height()-y)-(my_lcd.Get_Height()-y)*0.1*count_y, 3,' ', 10);
+    my_lcd.Print_Number_Int(long(max_limit_y*count_y*0.1), x_origin-25, (my_lcd.Get_Height()-y_origin)-(my_lcd.Get_Height()-y_origin)*0.1*count_y, 3,' ', 10);
   
   }
   
 }
 
-void Draw_Spectrum_Full(uint16_t x, uint16_t y)
+void Draw_Spectrum_Full()
 {
 
 if(flag_start != 1)
@@ -368,12 +380,12 @@ if(flag_start != 1)
 
 for(int count=0; count<BUFFER; count++)
 {
-  record_data_compressed[int((count*(my_lcd.Get_Width()-x))/BUFFER)] = record_data_compressed[int((count*(my_lcd.Get_Width()-x))/BUFFER)] + record_data[count];
+  record_data_compressed[int((count*(my_lcd.Get_Width()-x_origin))/BUFFER)] = record_data_compressed[int((count*(my_lcd.Get_Width()-x_origin))/BUFFER)] + record_data[count];
 }
 my_lcd.Set_Draw_color(0x0FFF);
-for(int count=0; count< my_lcd.Get_Width()-x; count++)
+for(int count=0; count< my_lcd.Get_Width()-x_origin; count++)
 {
-  my_lcd.Draw_Fast_VLine(x+count+1,my_lcd.Get_Height()-y-record_data_compressed[count],record_data_compressed[count]);
+  my_lcd.Draw_Fast_VLine(x_origin+count+1,my_lcd.Get_Height()-y_origin-record_data_compressed[count],record_data_compressed[count]);
 }
 
 flag_start = 1;
@@ -382,23 +394,24 @@ flag_start = 1;
 
 }
 
-void Update_Spectrum_Full(uint16_t x, uint16_t y, uint16_t adc_value)
+void Update_Spectrum_Full(uint16_t adc_value)
 {
-  adc_value = int((adc_value*(my_lcd.Get_Width()-x))/BUFFER);
-  record_data_compressed[adc_value] = record_data_compressed[adc_value] + 1;
+  
   my_lcd.Set_Draw_color(0x0FFF);
-  my_lcd.Draw_Fast_VLine(x+adc_value+1,my_lcd.Get_Height()-y-record_data_compressed[adc_value],record_data_compressed[adc_value]); // Blue Line
+  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,my_lcd.Get_Height()-y_origin-record_data_compressed[adc_value],record_data_compressed[adc_value]); // Blue Line
   my_lcd.Set_Draw_color(0x0000);
-  my_lcd.Draw_Fast_VLine(x+adc_value+1,0,my_lcd.Get_Height()-y-record_data_compressed[adc_value]); // Black Line
+  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,0,my_lcd.Get_Height()-y_origin-record_data_compressed[adc_value]); // Black Line
 
 }
 
 void Record_Data(uint16_t adc_value)
 {
   record_data[adc_value] = record_data[adc_value]+1;
+  adc_value = int((adc_value*(my_lcd.Get_Width()-x_origin))/BUFFER);
+  record_data_compressed[adc_value] = record_data_compressed[adc_value] + 1;
   if(flag_start == 1 && Screen2)
   {
-    Update_Spectrum_Full(45,35,adc_value);
+    Update_Spectrum_Full(adc_value);
   }
 }
 
