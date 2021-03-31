@@ -451,9 +451,9 @@ void Update_Spectrum_Full(uint16_t adc_value) // Updating the spectrum
 {
   uint16_t record_scale_change = ((record_data_compressed[adc_value]*my_lcd.Get_Height()-y_origin)/(500*Scale)); // Making changes in the record value to fit it in the specific given height
   my_lcd.Set_Draw_color(0x0FFF); 
-  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,my_lcd.Get_Height()-y_origin-record_axis_change,record_axis_change); // Blue Line
+  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,my_lcd.Get_Height()-y_origin-record_scale_change,record_scale_change); // Blue Line
   my_lcd.Set_Draw_color(0x0000);
-  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,0,my_lcd.Get_Height()-y_origin-record_axis_change); // Black Line
+  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,0,my_lcd.Get_Height()-y_origin-record_scale_change); // Black Line
 
 }
 
