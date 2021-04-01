@@ -27,8 +27,8 @@ static uint16_t max_limit_y; // Max y-limit to assign nos to y-axis
 
 static volatile uint16_t Scale = 1; // Scale to keep a track of how much to adjust the Screen Spectrum Display
 static volatile uint16_t Scale_exp = 1;
-static volatile uint16_t record_data[BUFFER]={0}; // Record of all the data stored
-static volatile uint16_t record_data_compressed[435]={0}; // Compressed data of the Entire Spectrum fit in the entire Display
+static volatile uint32_t record_data[BUFFER]={0}; // Record of all the data stored
+static volatile uint32_t record_data_compressed[435]={0}; // Compressed data of the Entire Spectrum fit in the entire Display
 static boolean flag_start=0; // Start flag to Draw Spectrum and Make the axis only once
 
 LCD_SHAKTI my_lcd(0x9486,480,320); // Constructor to give display ID, width and height
@@ -431,9 +431,9 @@ my_lcd.Set_Draw_color(0x0FFF);
 for(int count=0; count< my_lcd.Get_Width()-x_origin; count++) // To draw the spectrum lines starting from origin to the end of the screen width
 {
   my_lcd.Set_Draw_color(0x0FFF); // Light Blue Colour
-  my_lcd.Draw_Fast_VLine(x_origin+count+1,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y)),((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y))); // Drawing the Light Blue Line
+  my_lcd.Draw_Fast_VLine(x_origin+count+1,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp)),((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))); // Drawing the Light Blue Line
   my_lcd.Set_Draw_color(0x0000); // Black Colour
-  my_lcd.Draw_Fast_VLine(x_origin+count+1,0,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y))); // Drawing the reamining Black Line i.e not light blue
+  my_lcd.Draw_Fast_VLine(x_origin+count+1,0,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))); // Drawing the reamining Black Line i.e not light blue
 }
 
 flag_start = 1; // flag_start set to 1 to not make this run only once
@@ -444,16 +444,16 @@ else
   for(int count=0; count< my_lcd.Get_Width()-x_origin; count++) // To update the spectrum lines starting from origin to the end of the screen width whenever the scale changes
 {
   my_lcd.Set_Draw_color(0x0FFF); // Light Blue Colour
-  my_lcd.Draw_Fast_VLine(x_origin+count+1,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y)),((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y)));  // Drawing the Light Blue Line
+  my_lcd.Draw_Fast_VLine(x_origin+count+1,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp)),((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp)));  // Drawing the Light Blue Line
   my_lcd.Set_Draw_color(0x0000); // Black Colour
-  my_lcd.Draw_Fast_VLine(x_origin+count+1,0,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y))); // Drawing the reamining Black Line i.e not light blue
+  my_lcd.Draw_Fast_VLine(x_origin+count+1,0,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))); // Drawing the reamining Black Line i.e not light blue
 }
 }
 }
 
 void Update_Spectrum_Full(uint16_t adc_value) // Updating the spectrum 
 {
-  uint16_t record_scale_change = ((record_data_compressed[adc_value]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y)); // Making changes in the record value to fit it in the specific given height
+  uint16_t record_scale_change = ((record_data_compressed[adc_value]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp)); // Making changes in the record value to fit it in the specific given height
   my_lcd.Set_Draw_color(0x0FFF); 
   my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,my_lcd.Get_Height()-y_origin-record_scale_change,record_scale_change); // Blue Line
   my_lcd.Set_Draw_color(0x0000);
@@ -471,24 +471,15 @@ void Legends(uint16_t x, uint16_t y)
 
 void Record_Data(uint16_t adc_value) // Recording the data everytime a interrupt is generated
 {
-  record_data[adc_value] = record_data[adc_value]+1/Scale_exp; // The record data array with 1024 elements are increased accordingly depending on what the ADC value is
+  record_data[adc_value] = record_data[adc_value]+1; // The record data array with 1024 elements are increased accordingly depending on what the ADC value is
   adc_value = int((adc_value*(my_lcd.Get_Width()-x_origin))/BUFFER); // Compressing the adc value for record data compressed array
-  record_data_compressed[adc_value] = record_data_compressed[adc_value] + 1/Scale_exp; // Increasing the Record data compressed array values 
+  record_data_compressed[adc_value] = record_data_compressed[adc_value] + 1; // Increasing the Record data compressed array values 
   
-  if(record_data_compressed[adc_value] >= max_limit_y) // This is to update the Spectrum when the height reaches the specified value. In this case 100*Scale
+  if(record_data_compressed[adc_value] >= max_limit_y*Scale_exp) // This is to update the Spectrum when the height reaches the specified value. In this case 100*Scale
   {
     Serial.println("Hey");
     Scale = Scale+1; // Scale is incremented by one
     Scale_exp = Scale_exp*2;
-    for(int count=0;count<BUFFER; count++)
-    {
-      record_data[count] = record_data[count]/2; // Record data array values is reduced to half
-    }
-    
-    for(int count=0;count<435; count++)
-    {
-      record_data_compressed[count] = record_data_compressed[count]/2; // Record Compressed data array values is reduced to half
-    }
     
     if(flag_start == 1 && Screen2) // If Screen is 2 and Draw Spectrum has been run initialized then this will Refresh the spectrum and also change the y-axis values
   {
