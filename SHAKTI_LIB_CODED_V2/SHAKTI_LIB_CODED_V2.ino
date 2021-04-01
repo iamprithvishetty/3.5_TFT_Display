@@ -433,9 +433,10 @@ for(int count=0; count< my_lcd.Get_Width()-x_origin; count++) // To draw the spe
   my_lcd.Set_Draw_color(0x0FFF); // Light Blue Colour
   my_lcd.Draw_Fast_VLine(x_origin+count+1,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp)),((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))); // Drawing the Light Blue Line
   my_lcd.Set_Draw_color(0x0000); // Black Colour
-  my_lcd.Draw_Fast_VLine(x_origin+count+1,0,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))); // Drawing the reamining Black Line i.e not light blue
+  my_lcd.Draw_Fast_VLine(x_origin+count+1,top_y,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))-top_y); // Drawing the reamining Black Line i.e not light blue
 }
 
+Legends(350 ,5);
 flag_start = 1; // flag_start set to 1 to not make this run only once
 
 }
@@ -446,7 +447,7 @@ else
   my_lcd.Set_Draw_color(0x0FFF); // Light Blue Colour
   my_lcd.Draw_Fast_VLine(x_origin+count+1,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp)),((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp)));  // Drawing the Light Blue Line
   my_lcd.Set_Draw_color(0x0000); // Black Colour
-  my_lcd.Draw_Fast_VLine(x_origin+count+1,0,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))); // Drawing the reamining Black Line i.e not light blue
+  my_lcd.Draw_Fast_VLine(x_origin+count+1,top_y,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))-top_y); // Drawing the reamining Black Line i.e not light blue
 }
 }
 }
@@ -457,16 +458,21 @@ void Update_Spectrum_Full(uint16_t adc_value) // Updating the spectrum
   my_lcd.Set_Draw_color(0x0FFF); 
   my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,my_lcd.Get_Height()-y_origin-record_scale_change,record_scale_change); // Blue Line
   my_lcd.Set_Draw_color(0x0000);
-  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,0,my_lcd.Get_Height()-y_origin-record_scale_change); // Black Line
+  my_lcd.Draw_Fast_VLine(x_origin+adc_value+1,top_y,my_lcd.Get_Height()-y_origin-record_scale_change-top_y); // Black Line
 
 }
 
 void Legends(uint16_t x, uint16_t y)
 {
-  uint8_t text_x_axis = "X-Axis :";
-  uint8_t text_y_axis = "Y-Axis";
+  uint8_t *text_x_axis = "X-Axis :";
+  uint8_t *text_y_axis = "Y-Axis :";
+ 
+  my_lcd.Set_Text_colour(255, 3, 70);
+  my_lcd.Set_Text_Back_colour(0x0000);
+  my_lcd.Set_Text_Size(1);
   
-   
+  my_lcd.Print_String(text_x_axis,x,y);
+  my_lcd.Print_String(text_y_axis,x,y+10);
 }
 
 void Record_Data(uint16_t adc_value) // Recording the data everytime a interrupt is generated
