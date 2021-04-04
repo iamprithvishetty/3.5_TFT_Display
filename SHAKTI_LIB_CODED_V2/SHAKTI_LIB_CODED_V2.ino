@@ -1,14 +1,14 @@
 #include <LCD_SHAKTI.h>
 #include <math.h> //Math Library
 
-#define MAX_VALUE 60 // Counts Per Second Maximum Value
+#define MAX_VALUE 50 // Counts Per Second Maximum Value
 #define BUFFER 1024 // Array Size for 1024 Channels
 
 #define PI 3.141592653589793238 // Value of PI
 
 #define top_y 50
 
-static volatile uint8_t cps=10; //counts per second static volatile variable
+volatile uint8_t cps=10; //counts per second static volatile variable
 uint8_t previous_cps_bar=0; // Track Bar previous cps value saved for checking if there are changes in new value and previous value
 uint8_t previous_cps_curve=0; // Curve Pointer previous cps value saved for checking if there are changes in new value and previous value
 uint8_t previous_cps_warn=0; // Warning Text previous cps value saved for checking if there are changes in new value and previous value
@@ -20,16 +20,19 @@ int time_now = millis();
 boolean Screen1 = false; // Screen1 Flag to make Screen1 Run
 boolean Screen2 = true; // Screen2 Flag to make Screen2 Run
 
-static uint16_t x_origin; // Origin x-coordinate
-static uint16_t y_origin; // Origin y-coordinate
-static uint16_t max_limit_x; // Max x-limit to assign nos to x-axis
-static uint16_t max_limit_y; // Max y-limit to assign nos to y-axis
+uint16_t x_origin; // Origin x-coordinate
+uint16_t y_origin; // Origin y-coordinate
+uint16_t max_limit_x; // Max x-limit to assign nos to x-axis
+uint16_t max_limit_y; // Max y-limit to assign nos to y-axis
 
-static volatile uint16_t Scale = 1; // Scale to keep a track of how much to adjust the Screen Spectrum Display
-static volatile uint16_t Scale_exp = 1;
-static volatile uint32_t record_data[BUFFER]={0}; // Record of all the data stored
-static volatile uint32_t record_data_compressed[435]={0}; // Compressed data of the Entire Spectrum fit in the entire Display
-static boolean flag_start=0; // Start flag to Draw Spectrum and Make the axis only once
+volatile uint16_t Scale = 1; // Scale to keep a track of how much to adjust the Screen Spectrum Display
+volatile uint16_t Scale_exp = 1;
+volatile uint32_t record_data[BUFFER]={0}; // Record of all the data stored
+volatile uint32_t record_data_compressed[435]={0}; // Compressed data of the Entire Spectrum fit in the entire Display
+boolean flag_start=0; // Start flag to Draw Spectrum and Make the axis only once
+
+uint16_t legend_x;
+uint16_t legend_y;
 
 LCD_SHAKTI my_lcd(0x9486,480,320); // Constructor to give display ID, width and height
 
@@ -390,7 +393,7 @@ void Make_Axis() // To Make X-axis and Y-sxis with ma
     my_lcd.Draw_Pixel( x_origin-count_x, (my_lcd.Get_Height()-y_origin)-(my_lcd.Get_Height()-y_origin-top_y)*0.1*count_y);
     } 
      
-    my_lcd.Print_Number_Int(long(Scale*max_limit_y*count_y*0.1), x_origin-35, (my_lcd.Get_Height()-y_origin)-(my_lcd.Get_Height()-top_y-y_origin)*0.1*count_y, 3,' ', 10);
+    my_lcd.Print_Number_Int(long(Scale_exp*max_limit_y*count_y*0.1), x_origin-35, (my_lcd.Get_Height()-y_origin)-(my_lcd.Get_Height()-top_y-y_origin)*0.1*count_y, 3,' ', 10);
   
   }
   
@@ -436,7 +439,7 @@ for(int count=0; count< my_lcd.Get_Width()-x_origin; count++) // To draw the spe
   my_lcd.Draw_Fast_VLine(x_origin+count+1,top_y,my_lcd.Get_Height()-y_origin-((record_data_compressed[count]*(my_lcd.Get_Height()-top_y-y_origin))/(max_limit_y*Scale_exp))-top_y); // Drawing the reamining Black Line i.e not light blue
 }
 
-Legends(350 ,5);
+Legends(210 ,5);
 flag_start = 1; // flag_start set to 1 to not make this run only once
 
 }
@@ -464,16 +467,19 @@ void Update_Spectrum_Full(uint16_t adc_value) // Updating the spectrum
 
 void Legends(uint16_t x, uint16_t y)
 {
-  uint8_t *text_x_axis = "X-Axis :";
-  uint8_t *text_y_axis = "Y-Axis :";
+
+  uint8_t *text_x_axis = "X-Axis :1 ut=";
+  uint8_t *text_y_axis = "Y-Axis :1 ut=";
  
-  my_lcd.Set_Text_colour(255, 3, 70);
+  my_lcd.Set_Text_colour(255, 255, 255);
   my_lcd.Set_Text_Back_colour(0x0000);
-  my_lcd.Set_Text_Size(1);
+  my_lcd.Set_Text_Size(2);
   
   my_lcd.Print_String(text_x_axis,x,y);
-  my_lcd.Print_String(text_y_axis,x,y+10);
+  my_lcd.Print_String(text_y_axis,x,y+18);
+
 }
+
 
 void Record_Data(uint16_t adc_value) // Recording the data everytime a interrupt is generated
 {
