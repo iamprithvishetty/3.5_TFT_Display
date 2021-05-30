@@ -11,6 +11,8 @@ LCD_SHAKTI my_lcd(0x9486,480,320);
 uint8_t* space_1 = "  ";
 uint8_t* arrow = "->";
 
+uint8_t* shakti_port = "FUNCTION GENERATOR";
+
 struct Options_List{
   uint8_t* main_option;
   uint8_t* sub_option[10];
@@ -115,7 +117,6 @@ void Main_Screen()
   my_lcd.Set_Text_Size(3);
   my_lcd.Set_Text_Back_colour(42, 150, 138);
   my_lcd.Set_Text_Mode(0);
-  uint8_t* shakti_port = "FUNCTION GENERATOR";
   my_lcd.Print_String(shakti_port, 480/2 - 16*mystrlen(shakti_port)/2, my_lcd.Get_Display_Height()*0.1);
 }
 
@@ -275,7 +276,7 @@ void Enter_Button()
 
     else if(flag_enter == true and set_point_enter == Opt[set_point].no_sub_option -1)
     {
-      
+      Back_To_MainScreen();
     }
   }
 }
@@ -386,17 +387,37 @@ void ScrollDownEnter()
 void Back_To_MainScreen()
 {
   uint8_t page = set_point/(MAX_VISIBLE-1);
+  flag_enter = false;
   my_lcd.Set_Text_Size(3);
   my_lcd.Set_Text_Back_colour(42, 150, 138);
   my_lcd.Set_Text_colour(0, 0, 0);
   my_lcd.Set_Text_Mode(0);
   uint8_t *space_big = "                       ";
   my_lcd.Print_String(space_big, 20, my_lcd.Get_Display_Height()*0.1);
-  my_lcd.Print_String(shakti_port, 480/2 - 16*mystrlen(Opt[set_point].main_option)/2, my_lcd.Get_Display_Height()*0.1);
+  my_lcd.Print_String(shakti_port, 480/2 - 16*mystrlen(shakti_port)/2, my_lcd.Get_Display_Height()*0.1);
   my_lcd.Set_Text_colour(255, 255, 255);
-  for(int i=page*MAX_VISIBLE; i<= page*MAX_VISIBLE+set_point%(MAX_VISIBLE-1);i++)
+  
+    if(NO_OPTIONS <= MAX_VISIBLE)
   {
-    
+   for(int i=0; i< NO_OPTIONS; i++)
+   {
+    my_lcd.Set_Text_Size(2);
+    my_lcd.Print_String(space_1, 140, my_lcd.Get_Display_Height()*(0.3 + i*0.1));
+    my_lcd.Print_String(space, 170, my_lcd.Get_Display_Height()*(0.3+i*0.1));
+    my_lcd.Print_String(Opt[i].main_option, 170, my_lcd.Get_Display_Height()*(0.3+i*0.1));
+   }
+    my_lcd.Print_String(arrow, 140, my_lcd.Get_Display_Height()*(0.3 + (set_point%(MAX_VISIBLE-1))*0.1));
+  } 
+  else
+  {
+   for(int i=0; i< MAX_VISIBLE; i++)
+   {
+    my_lcd.Set_Text_Size(2);
+    my_lcd.Print_String(space_1, 140, my_lcd.Get_Display_Height()*(0.3 + i*0.1));
+    my_lcd.Print_String(space, 170, my_lcd.Get_Display_Height()*(0.3+i*0.1));
+    my_lcd.Print_String(Opt[page*MAX_VISIBLE+i].main_option, 170, my_lcd.Get_Display_Height()*(0.3+i*0.1));
+   } 
+   my_lcd.Print_String(arrow, 140, my_lcd.Get_Display_Height()*(0.3 + (set_point%(MAX_VISIBLE-1))*0.1));
   }
   
 }
