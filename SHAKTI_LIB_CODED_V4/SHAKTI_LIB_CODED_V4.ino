@@ -17,9 +17,9 @@ bool flag_curve=false; // To initialize the Curve and Pointer to make it run onl
 bool flag_warn=false; // To initialize the Warning Text to make it run only once
 int time_now = millis();
 
-boolean Screen1 = false; // Screen1 Flag to make Screen1 Run
+boolean Screen1 = true; // Screen1 Flag to make Screen1 Run
 boolean Screen2 = false; // Screen2 Flag to make Screen2 Run
-boolean Screen3 = true;
+boolean Screen3 = false; // SCreen3 Flag to make Screen3 Run
 
 uint16_t x_origin; // Origin x-coordinate
 uint16_t y_origin; // Origin y-coordinate
@@ -38,7 +38,6 @@ volatile uint16_t higher_max_x=0;
 volatile uint16_t Scale_max = 1; // Scale to keep a track of how much to adjust the Screen Spectrum Display
 volatile uint16_t Scale_exp_max = 1;
 volatile uint16_t max_channel = 0;
-volatile uint16_t lower_threshold=0, higher_threshold=0;
 
 int time_now_max = 0;
  
@@ -54,7 +53,7 @@ void setup() {
   my_lcd.Set_Rotation(1); 
   my_lcd.Fill_Screen(0, 0, 0);
   Set_Origin(45,30); // To Set the Orgin as Static Variables
-  Set_Max_Limit(1024,100); // To Set Max x-axis limit and y-axis limit
+  Set_Max_Limit(BUFFER,100); // To Set Max x-axis limit and y-axis limit
   for(int count=0;count<20000;count++) // Testing purpose record data
   {
     Record_Data(random(0,1024));
@@ -68,12 +67,13 @@ void setup() {
 }
 
 void loop() {
+  
  if(Screen1) // If Screen1 is TRUE
  {
   if(millis()-time_now>50)
   {
     time_now = millis();
-    if(cps>=60)
+    if(cps>=MAX_VALUE)
     {
       cps=0;
     }
@@ -377,8 +377,8 @@ void Set_Origin(uint16_t x,  uint16_t y) // Setting Origin so that we don't have
 
 void Set_Max_Limit(uint16_t x_lim, uint16_t y_lim) // Setting Maximum value for x-axis and y-axis value respectively
 {
-  max_limit_x = x_lim;
-  max_limit_y = y_lim;
+  max_limit_x = x_lim; // The maximum limit of x-axis
+  max_limit_y = y_lim; //
 }
 
 void Make_Axis() // To Make X-axis and Y-sxis with ma
@@ -435,13 +435,13 @@ void Update_Y_Axis() // Updating the Y-Axis Numbering
   my_lcd.Set_Text_Size(1); // Text Size
   my_lcd.Set_Text_Mode(0);
   
-  for(uint8_t count_y=1; count_y<= 10; count_y++)  // Updating only the Y-axis numbering to new scaled value depending on Scale=?
+  for(uint8_t count_y=1; count_y<= 10; count_y++)  // Updating only the Y-axis numbering to new scaled value depending on Scale_exp=?
   {
     my_lcd.Print_Number_Int(long(Scale_exp*max_limit_y*count_y*0.1), x_origin-35, (my_lcd.Get_Height()-y_origin)-(my_lcd.Get_Height()-top_y-y_origin)*0.1*count_y, 3,' ', 10);
   }
 }
 
-void Update_Y_Axis_Max() // Updating the Y-Axis Numbering
+void Update_Y_Axis_Max() // Updating the Y-Axis Numbering for zoomed screen
 {
    // Y-Axis Points
   my_lcd.Set_Text_colour(0x0FFF);// Light Blue Colour
@@ -449,7 +449,7 @@ void Update_Y_Axis_Max() // Updating the Y-Axis Numbering
   my_lcd.Set_Text_Size(1); // Text Size
   my_lcd.Set_Text_Mode(0);
   
-  for(uint8_t count_y=1; count_y<= 10; count_y++)  // Updating only the Y-axis numbering to new scaled value depending on Scale=?
+  for(uint8_t count_y=1; count_y<= 10; count_y++)  // Updating only the Y-axis numbering to new scaled value depending on Scale_exp_max=?
   {
     my_lcd.Print_Number_Int(long(Scale_exp_max*max_limit_y*count_y*0.1), x_origin-35, (my_lcd.Get_Height()-y_origin)-(my_lcd.Get_Height()-top_y-y_origin)*0.1*count_y, 3,' ', 10);
   }
@@ -551,8 +551,6 @@ void Draw_Spectrum_Max()
   if(flag_start_max == 0)
   {
      max_channel = Max_Value(record_data,BUFFER);
-     lower_threshold = max_channel - 10;
-     higher_threshold = max_channel + 10;
      Legends_Max(210 ,5);
      if ( max_channel >= BUFFER - (my_lcd.Get_Width() - x_origin) + (my_lcd.Get_Width()-x_origin)/3)
      {
@@ -637,44 +635,44 @@ void Update_Spectrum_Max(uint16_t adc_value) // Updating the spectrum
   }
 }
 
-void Legends(uint16_t x, uint16_t y)
+void Legends(uint16_t x, uint16_t y) // To draw the legends for the normal whole screen gui
 {
 
-  uint8_t *text_x_axis = "X-Axis :1 ut=    ch";
-  uint8_t *text_y_axis = "Y-Axis :1 ut=    cps";
+  uint8_t *text_x_axis = "X-Axis :1 ut=    ch"; // The text to be written
+  uint8_t *text_y_axis = "Y-Axis :1 ut=    cps"; // The text to be written
 
-  legend_x = x;
-  legend_y = y;
+  legend_x = x; // Setting legend_x global variable to place it at certain x-coordinate
+  legend_y = y; // Setting legend_y global variable to place it at certain y-coordinate
  
-  my_lcd.Set_Text_colour(255, 255, 255);
-  my_lcd.Set_Text_Back_colour(0x0000);
-  my_lcd.Set_Text_Size(2);
+  my_lcd.Set_Text_colour(255, 255, 255); // Color of the legends
+  my_lcd.Set_Text_Back_colour(0x0000); // Bg of the text is set to black color
+  my_lcd.Set_Text_Size(2); // Size set to 2
   
-  my_lcd.Print_String(text_x_axis,x,y);
-  my_lcd.Print_String(text_y_axis,x,y+18);
+  my_lcd.Print_String(text_x_axis,x,y); // Printing from pos x,y
+  my_lcd.Print_String(text_y_axis,x,y+18); // Printing from pos x,y+18
 
-  Legends_Update_X();
-  Legends_Update_Y();
+  Legends_Update_X(); // To set the legend according to the updated one if updated
+  Legends_Update_Y(); 
 
 }
 
-void Legends_Update_X()
+void Legends_Update_X() // X-axis Legends will be updated here
 {
   my_lcd.Set_Text_colour(255, 255, 255);
   my_lcd.Set_Text_Back_colour(0x0000);
   my_lcd.Set_Text_Size(2);
-  my_lcd.Print_Number_Int(long(max_limit_x/10),legend_x+160,legend_y, 3,' ', 10);
+  my_lcd.Print_Number_Int(long(max_limit_x/10),legend_x+160,legend_y, 3,' ', 10); //This will remain constant because X-axis legend never changes 
 }
 
-void Legends_Update_Y()
+void Legends_Update_Y() // Y-axis Legends will be updated here
 {
   my_lcd.Set_Text_colour(255, 255, 255);
   my_lcd.Set_Text_Back_colour(0x0000);
   my_lcd.Set_Text_Size(2);
-  my_lcd.Print_Number_Int(long((Scale_exp*max_limit_y)/10),legend_x+160,legend_y+18, 3,' ', 10);
+  my_lcd.Print_Number_Int(long((Scale_exp*max_limit_y)/10),legend_x+160,legend_y+18, 3,' ', 10); // This will be updated because the Y-axis gets scaled down with time
 }
 
-void Legends_Max(uint16_t x, uint16_t y)
+void Legends_Max(uint16_t x, uint16_t y) // Entirely same as Legends function; this is for the zoomed in screen
 {
 
   uint8_t *text_x_axis = "X-Axis :1 ut=    ch";
@@ -723,7 +721,7 @@ void Record_Data(uint16_t adc_value) // Recording the data everytime a interrupt
   if(record_data[adc_value] >= max_limit_y*Scale_exp_max)
   {
     Scale_max = Scale_max +1; // Scale is incremented by one
-    Scale_exp_max = Scale_exp_max*2;
+    Scale_exp_max = Scale_exp_max*2; 
 
      if(flag_start_max == 1 && Screen3) // If Screen is 3 and Draw Spectrum has been run initialized then this will Refresh the spectrum and also change the y-axis values
   {
@@ -735,11 +733,11 @@ void Record_Data(uint16_t adc_value) // Recording the data everytime a interrupt
 
   if(flag_start_max == 1 && Screen3) // If Screen is 2 and Draw Spectrum has been run initialized then this will update the individual values that have changed
   {
-    if( abs(max_channel_now - max_channel) > 25 )
+    if( abs(max_channel_now - max_channel) > 25 ) // THIS IS THE THRESHOLD SET i.e -25 to +25 total 50, that means if value crosses this threshold only then update the screen
     {
-      max_channel = max_channel_now;
+      max_channel = max_channel_now; //Now the center has changed to new value and the screen won't update until the next max value is 25 units away either on left or right
       flag_start_max = 0;
-      Draw_Spectrum_Max(); 
+      Draw_Spectrum_Max(); // Draw the new Zommed Spectrum
     }
     Update_Spectrum_Max(adc_value); // This is to update the spectrum
   }
@@ -748,10 +746,10 @@ void Record_Data(uint16_t adc_value) // Recording the data everytime a interrupt
   
   adc_value = int((adc_value*(my_lcd.Get_Width()-x_origin))/BUFFER); // Compressing the adc value for record data compressed array
   record_data_compressed[adc_value] = record_data_compressed[adc_value] + 1; // Increasing the Record data compressed array values 
-  if(record_data_compressed[adc_value] >= max_limit_y*Scale_exp) // This is to update the Spectrum when the height reaches the specified value. In this case 100*Scale
+  if(record_data_compressed[adc_value] >= max_limit_y*Scale_exp) // This is to update the Spectrum when the height reaches the specified value. In this case 100*Scale_exp
   {
     Scale = Scale+1; // Scale is incremented by one
-    Scale_exp = Scale_exp*2;
+    Scale_exp = Scale_exp*2; // Scale exponential multiplies by factor of two everytime Y-axis limit is crossed
     
     if(flag_start == 1 && Screen2) // If Screen is 2 and Draw Spectrum has been run initialized then this will Refresh the spectrum and also change the y-axis values
   {
@@ -771,9 +769,9 @@ void Record_Data(uint16_t adc_value) // Recording the data everytime a interrupt
 
 }
 
-uint16_t Max_Value(uint32_t *arr, uint16_t len)
+uint16_t Max_Value(uint32_t *arr, uint16_t len) //Find out which channel has the max value
 {
-  uint32_t compare = 0;
+  uint32_t compare = 0; 
   uint16_t channel=0;
   for(uint16_t i=0; i < len; i++)
   {
@@ -783,22 +781,22 @@ uint16_t Max_Value(uint32_t *arr, uint16_t len)
       channel = i;
     }
   }
-  return channel;
+  return channel; //Returns the channel
 }
 
-void Make_Max_Value()
+void Make_Max_Value() // To print the max valued channel
 {
   uint8_t *text_max_value = "MAX CPS";
   my_lcd.Set_Text_colour(255, 255, 255);
   my_lcd.Set_Text_Back_colour(0x0000);
   my_lcd.Set_Text_Size(2);
-  my_lcd.Print_String(text_max_value,legend_x-100,legend_y);
-  Update_Max_Value();
+  my_lcd.Print_String(text_max_value,legend_x-100,legend_y); // This is to only print string "MAX CPS" the value is printed in Update_Max_Value
+  Update_Max_Value(); // Print the channel that has the maximum value
 }
 
-void Update_Max_Value()
+void Update_Max_Value() // This is to print or update the channel that has max value
 {
-  uint16_t max_channel = Max_Value(record_data,BUFFER);
+  uint16_t max_channel = Max_Value(record_data,BUFFER); // Finds out the channel with max value
   //Serial.println(max_channel);
-  my_lcd.Print_Number_Int(long(max_channel),legend_x-100,legend_y+18, 4,' ', 10);
+  my_lcd.Print_Number_Int(long(max_channel),legend_x-100,legend_y+18, 4,' ', 10); // Prints it on the screen
 }
